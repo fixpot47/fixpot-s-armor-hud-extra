@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "package": "dev.fixpot47.armorhudextra.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [],
+  "client": [
+    "InventoryMenuAccessor",
+    "MixinBossHealthOverlay",
+    "MixinHud",
+    "MixinMinecraft",
+    "MixinSubtitleOverlay"
+  ],
+  "server": [],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
