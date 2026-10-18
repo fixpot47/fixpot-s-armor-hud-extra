@@ -1,39 +1,37 @@
 # fixpot's Armor HUD Extra
 
-An expanded armor and equipment HUD for **Minecraft 26.3 Fabric**.
+**fixpot's Armor HUD Extra is an add-on for fixpot's Armor HUD.**
 
-Armor HUD Extra keeps the compact vanilla-like armor display and adds extra equipment information:
+It works like the relationship between **Sodium** and **Sodium Extra**: the normal Armor HUD stays installed and Extra adds more features on top of it.
 
-- Armor icons and durability
-- Optional main-hand and offhand items in the same HUD
-- Durability bar, remaining value, percentage, or exact `remaining/max`
-- Optional 100% durability values
-- Low-durability warnings for armor and held items
-- Warning sound when a tracked item takes damage while critically low
-- Horizontal and vertical layouts
-- Multiple anchors and vanilla-like background styles
-- Config screen through **FixLib**
+## Extra features
 
-## Requirements
+- Adds optional **main-hand** and **offhand** item slots attached to the normal Armor HUD
+- Held-item durability can be shown as remaining value, percentage, or exact `remaining/max`
+- Optional low-durability warning for held items
+- Optional warning sound when a held item takes damage while critically low
+- Optional compact display of the **lowest armor durability percentage**
+- Automatically follows the normal Armor HUD's position, orientation, side, style, and enabled state
+- English and Russian translations
+- Client-side only
 
-GitHub Actions automatically compiles every update so the release JAR is reproducible.
+## Required dependencies
 
 - Minecraft **26.3**
 - Fabric Loader **0.19+**
 - Fabric API
+- **fixpot's Armor HUD 1.1.0+**
 - **FixLib 2.2.0+**
 
-## Compatibility
-
-Do not install this together with the normal **fixpot's Armor HUD**. Armor HUD Extra is intended to replace it.
-
-## Credits
-
-This project is based on **uku's Armor HUD / Armor HUD** by BerdinskiyBear and uku, and on fixpot47's maintained 26.3 fork.
+The normal Armor HUD is **required**. Armor HUD Extra does not replace it.
 
 ## ❤️ Support the project
 
 **[Buy us a Cookie](https://www.donationalerts.com/r/fixpot47)**
+
+## Credits
+
+Based around **fixpot's Armor HUD**, which itself is based on Armor HUD / uku's Armor HUD by BerdinskiyBear and uku.
 
 ## License
 

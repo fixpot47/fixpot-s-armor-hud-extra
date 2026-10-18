@@ -1,9 +1,8 @@
 package dev.fixpot47.armorhudextra.mixin;
 
-import com.llamalad7.mixinextras.sugar.Share;
-import com.llamalad7.mixinextras.sugar.ref.LocalIntRef;
+import dev.fixpot47.armorhudextra.ArmorHudBridge;
 import dev.fixpot47.armorhudextra.ArmorHudExtraMod;
-import dev.fixpot47.armorhudextra.ArmorHudExtraMod.HudEntry;
+import dev.fixpot47.armorhudextra.ArmorHudExtraMod.HeldEntry;
 import dev.fixpot47.armorhudextra.config.ArmorHudExtraConfig;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.gui.Font;
@@ -13,8 +12,6 @@ import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
-import net.minecraft.util.Mth;
-import net.minecraft.util.RandomSource;
 import net.minecraft.util.profiling.Profiler;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -24,18 +21,16 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
 import java.util.Optional;
 
-import static dev.fixpot47.armorhudextra.ArmorHudExtraMod.*;
+import static dev.fixpot47.armorhudextra.ArmorHudExtraMod.SIZE;
+import static dev.fixpot47.armorhudextra.ArmorHudExtraMod.STEP;
 
-@Mixin(Hud.class)
+@Mixin(value = Hud.class, priority = 900)
 public abstract class MixinHud {
-    @Shadow @Final private RandomSource random;
-
     @Shadow
     protected abstract void extractSlot(
             GuiGraphicsExtractor graphics,
@@ -50,256 +45,215 @@ public abstract class MixinHud {
     @Shadow
     public abstract Font getFont();
 
-    @Shadow @Final private static Identifier HOTBAR_SPRITE;
     @Shadow @Final private static Identifier HOTBAR_OFFHAND_LEFT_SPRITE;
 
     @Inject(method = "extractItemHotbar", at = @At("TAIL"))
     public void renderArmorHudExtra(GuiGraphicsExtractor graphics, DeltaTracker tickCounter, CallbackInfo ci) {
-        Profiler.get().push(MOD_ID);
-        drawArmorHudExtra(graphics, tickCounter);
+        Profiler.get().push(ArmorHudExtraMod.MOD_ID);
+        drawExtra(graphics, tickCounter);
         Profiler.get().pop();
     }
 
     @Unique
-    private void drawArmorHudExtra(GuiGraphicsExtractor graphics, DeltaTracker tickCounter) {
-        ArmorHudExtraConfig config = getManager().getConfig();
-        if (!config.isEnabled()) return;
-
-        Player player = getCameraPlayer();
-        if (player == null) return;
-
-        Optional<Rect2i> rect = getWidgetRect(graphics, player);
-        if (rect.isEmpty()) return;
-
-        List<HudEntry> entries = getHudEntries(player);
-        if (config.isReversed()) {
-            entries = entries.reversed();
+    private void drawExtra(GuiGraphicsExtractor graphics, DeltaTracker tickCounter) {
+        ArmorHudExtraConfig config = ArmorHudExtraMod.getManager().getConfig();
+        if (!config.isEnabled() || !ArmorHudBridge.isBaseEnabled()) {
+            return;
         }
 
-        int textureWidth = SIZE + ((entries.size() - 1) * STEP);
-
-        graphics.pose().pushMatrix();
-        graphics.pose().translate(rect.get().getX(), rect.get().getY());
-
-        if (config.getOrientation() == ArmorHudExtraConfig.Orientation.VERTICAL) {
-            graphics.pose().rotate(Mth.HALF_PI).translate(0, -SIZE);
+        Player player = ArmorHudExtraMod.getCameraPlayer();
+        if (player == null) {
+            return;
         }
 
-        int color = ARGB.white(ArmorHudExtraMod.getModCompat().hudOpacity());
-
-        switch (config.getStyle()) {
-            case HOTBAR -> {
-                graphics.blitSprite(
-                        RenderPipelines.GUI_TEXTURED,
-                        HOTBAR_SPRITE,
-                        182, 22,
-                        0, 0,
-                        0, 0,
-                        textureWidth - 3, SIZE,
-                        color
-                );
-                graphics.blitSprite(
-                        RenderPipelines.GUI_TEXTURED,
-                        HOTBAR_SPRITE,
-                        182, 22,
-                        182 - 3, 0,
-                        textureWidth - 3, 0,
-                        3, SIZE,
-                        color
-                );
-            }
-            case ROUNDED_CORNERS -> {
-                if (entries.size() > 1) {
-                    graphics.blitSprite(RenderPipelines.GUI_TEXTURED, HOTBAR_OFFHAND_LEFT_SPRITE, 29, 24, 0, 1, 0, 0, 3, SIZE, color);
-                    graphics.blitSprite(RenderPipelines.GUI_TEXTURED, HOTBAR_SPRITE, 182, 22, 3, 0, 3, 0, textureWidth - 6, SIZE, color);
-                    graphics.blitSprite(RenderPipelines.GUI_TEXTURED, HOTBAR_OFFHAND_LEFT_SPRITE, 29, 24, SIZE - 3, 1, textureWidth - 3, 0, 3, SIZE, color);
-                } else {
-                    graphics.blitSprite(RenderPipelines.GUI_TEXTURED, HOTBAR_OFFHAND_LEFT_SPRITE, 29, 24, 0, 1, 0, 0, SIZE, SIZE, color);
-                }
-            }
-            case ROUNDED -> {
-                if (entries.size() > 1) {
-                    int borderWidth = (SIZE - STEP) / 2;
-                    graphics.blitSprite(RenderPipelines.GUI_TEXTURED, HOTBAR_OFFHAND_LEFT_SPRITE, 29, 24, 0, 1, 0, 0, SIZE - borderWidth, SIZE, color);
-                    for (int i = 1; i < entries.size() - 1; i++) {
-                        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, HOTBAR_OFFHAND_LEFT_SPRITE, 29, 24, borderWidth, 1, borderWidth + i * STEP, 0, STEP, SIZE, color);
-                    }
-                    graphics.blitSprite(RenderPipelines.GUI_TEXTURED, HOTBAR_OFFHAND_LEFT_SPRITE, 29, 24, 1, 1, textureWidth - STEP - borderWidth, 0, SIZE - borderWidth, SIZE, color);
-                } else {
-                    graphics.blitSprite(RenderPipelines.GUI_TEXTURED, HOTBAR_OFFHAND_LEFT_SPRITE, 29, 24, 0, 1, 0, 0, SIZE, SIZE, color);
-                }
-            }
-            case NONE -> {
-            }
+        Optional<Rect2i> baseRectOptional = ArmorHudBridge.getWidgetRect(graphics, player);
+        if (baseRectOptional.isEmpty()) {
+            return;
         }
 
-        graphics.pose().popMatrix();
+        Rect2i baseRect = baseRectOptional.get();
+        List<HeldEntry> heldEntries = ArmorHudExtraMod.getHeldEntries(player);
 
-        for (int i = 0; i < entries.size(); i++) {
-            HudEntry entry = entries.get(i);
-            ItemStack stack = entry.stack();
+        String orientation = ArmorHudBridge.orientation();
+        String anchor = ArmorHudBridge.anchor();
+        String side = ArmorHudBridge.side();
+        String style = ArmorHudBridge.style();
 
-            int x = rect.get().getX();
-            int y = rect.get().getY();
+        for (int i = 0; i < heldEntries.size(); i++) {
+            HeldEntry entry = heldEntries.get(i);
+            int[] position = heldSlotPosition(baseRect, i, heldEntries.size(), orientation, anchor, side);
+            drawHeldSlot(
+                    graphics,
+                    tickCounter,
+                    player,
+                    entry,
+                    position[0],
+                    position[1],
+                    i,
+                    style,
+                    orientation,
+                    anchor,
+                    side,
+                    config
+            );
+        }
 
-            switch (config.getOrientation()) {
-                case HORIZONTAL -> x += STEP * i;
-                case VERTICAL -> y += STEP * i;
+        if (config.isShowLowestArmorPercentage()) {
+            drawLowestArmorPercentage(graphics, player, baseRect, orientation, anchor);
+        }
+    }
+
+    @Unique
+    private int[] heldSlotPosition(
+            Rect2i baseRect,
+            int index,
+            int count,
+            String orientation,
+            String anchor,
+            String side
+    ) {
+        if ("VERTICAL".equals(orientation)) {
+            boolean extendDown = "TOP".equals(anchor) || "TOP_CENTER".equals(anchor);
+            int y = extendDown
+                    ? baseRect.getY() + baseRect.getHeight() - 2 + (STEP * index)
+                    : baseRect.getY() - (STEP * (index + 1));
+            return new int[]{baseRect.getX(), y};
+        }
+
+        boolean extendRight = "HOTBAR".equals(anchor)
+                ? "RIGHT".equals(side)
+                : "LEFT".equals(side);
+
+        int x = extendRight
+                ? baseRect.getX() + baseRect.getWidth() - 2 + (STEP * index)
+                : baseRect.getX() - (STEP * (index + 1));
+
+        return new int[]{x, baseRect.getY()};
+    }
+
+    @Unique
+    private void drawHeldSlot(
+            GuiGraphicsExtractor graphics,
+            DeltaTracker tickCounter,
+            Player player,
+            HeldEntry entry,
+            int x,
+            int y,
+            int index,
+            String style,
+            String orientation,
+            String anchor,
+            String side,
+            ArmorHudExtraConfig config
+    ) {
+        if (!"NONE".equals(style)) {
+            graphics.blitSprite(
+                    RenderPipelines.GUI_TEXTURED,
+                    HOTBAR_OFFHAND_LEFT_SPRITE,
+                    29, 24,
+                    0, 1,
+                    x, y,
+                    SIZE, SIZE,
+                    ARGB.white(1.0F)
+            );
+        }
+
+        ItemStack stack = entry.stack();
+        this.extractSlot(graphics, x + 3, y + 3, tickCounter, player, stack, 100 + index);
+
+        boolean warning = config.isWarnHeldItems() && ArmorHudExtraMod.shouldWarn(stack);
+        String durability = durabilityText(stack, config);
+        if (warning) {
+            durability = durability.isEmpty() ? "!" : "! " + durability;
+        }
+
+        if (durability.isEmpty()) {
+            return;
+        }
+
+        int color = warning
+                ? ARGB.opaque(0xFF5555)
+                : ARGB.opaque(stack.isDamageableItem() ? stack.getBarColor() : 0xFFFFFF);
+
+        if ("VERTICAL".equals(orientation)) {
+            boolean detailsRight = "HOTBAR".equals(anchor)
+                    ? "RIGHT".equals(side)
+                    : "LEFT".equals(side);
+
+            int textY = y + (SIZE - this.getFont().lineHeight) / 2;
+            if (detailsRight) {
+                graphics.text(this.getFont(), durability, x + SIZE + 2, textY, color);
+            } else {
+                int width = this.getFont().width(durability);
+                graphics.text(this.getFont(), durability, x - width - 2, textY, color);
             }
-
-            if (config.isIconsShown() && entry.isArmor() && stack.isEmpty()) {
-                Identifier identifier = InventoryMenuAccessor.getTEXTURE_EMPTY_SLOTS().get(entry.armorSlot());
-                if (identifier != null) {
-                    graphics.blitSprite(RenderPipelines.GUI_TEXTURED, identifier, x + 3, y + 3, 16, 16);
-                }
-            }
-
-            this.extractSlot(graphics, x + 3, y + 3, tickCounter, player, stack, i + 1);
-
-            ArmorHudExtraConfig.Side extrasSide =
-                    config.getAnchor() == ArmorHudExtraConfig.Anchor.HOTBAR
-                            ? config.getSide()
-                            : config.getSide().getOpposite();
-
-            if (config.getAnchor().isTop()
-                    && config.getOrientation() == ArmorHudExtraConfig.Orientation.HORIZONTAL) {
-                y += SIZE;
-            } else if (extrasSide == ArmorHudExtraConfig.Side.RIGHT
-                    && config.getOrientation() == ArmorHudExtraConfig.Orientation.VERTICAL) {
-                x += SIZE;
-            }
-
-            if (config.getDurabilityDisplay() != ArmorHudExtraConfig.DurabilityDisplay.BAR
-                    && !stack.isEmpty()
-                    && stack.isDamageableItem()) {
-                String durability = durabilityText(stack, config);
-                if (!durability.isEmpty()) {
-                    int textHeight = this.getFont().lineHeight;
-
-                    if (config.getOrientation() == ArmorHudExtraConfig.Orientation.HORIZONTAL) {
-                        if (!config.getAnchor().isTop()) {
-                            y -= textHeight;
-                        }
-
-                        graphics.centeredText(
-                                this.getFont(),
-                                durability,
-                                x + (SIZE / 2),
-                                y,
-                                ARGB.opaque(stack.getBarColor())
-                        );
-
-                        if (config.getAnchor().isTop()) {
-                            y += textHeight;
-                        }
-                    } else {
-                        int textWidth = this.getFont().width(durability) + 2;
-                        int textY = (SIZE - textHeight) / 2;
-
-                        if (extrasSide == ArmorHudExtraConfig.Side.LEFT) {
-                            x -= textWidth;
-                        }
-
-                        graphics.text(
-                                this.getFont(),
-                                durability,
-                                x + 1,
-                                y + textY,
-                                ARGB.opaque(stack.getBarColor())
-                        );
-
-                        if (extrasSide == ArmorHudExtraConfig.Side.RIGHT) {
-                            x += textWidth;
-                        }
-                    }
-                }
-            }
-
-            boolean mayWarn = entry.isArmor() || config.isWarnHeldItems();
-            if (mayWarn && config.isWarningShown() && shouldShowWarning(stack)) {
-                drawWarning(graphics, config, extrasSide, x, y);
-            }
+        } else {
+            boolean topAnchor = "TOP".equals(anchor) || "TOP_CENTER".equals(anchor);
+            int textY = topAnchor
+                    ? y + SIZE + 1
+                    : y - this.getFont().lineHeight - 1;
+            graphics.centeredText(this.getFont(), durability, x + (SIZE / 2), textY, color);
         }
     }
 
     @Unique
     private String durabilityText(ItemStack stack, ArmorHudExtraConfig config) {
+        if (stack.isEmpty()
+                || !stack.isDamageableItem()
+                || config.getHeldItemDurability() == ArmorHudExtraConfig.DurabilityDisplay.NONE) {
+            return "";
+        }
+
         int max = stack.getMaxDamage();
         int remaining = max - stack.getDamageValue();
 
-        return switch (config.getDurabilityDisplay()) {
-            case NUMERIC -> String.valueOf(remaining);
-            case PERCENTAGE -> {
-                int percentage = (int) Math.floor((remaining / (double) max) * 100.0);
-                if (percentage == 100 && !config.isShowFullDurability()) {
-                    yield "";
-                }
-                yield percentage + "%";
-            }
+        if (remaining == max && !config.isShowFullDurability()) {
+            return "";
+        }
+
+        return switch (config.getHeldItemDurability()) {
+            case NONE -> "";
+            case REMAINING -> String.valueOf(remaining);
+            case PERCENTAGE -> (int) Math.floor((remaining / (double) max) * 100.0) + "%";
             case EXACT -> remaining + "/" + max;
-            case BAR -> "";
         };
     }
 
     @Unique
-    private void drawWarning(
+    private void drawLowestArmorPercentage(
             GuiGraphicsExtractor graphics,
-            ArmorHudExtraConfig config,
-            ArmorHudExtraConfig.Side extrasSide,
-            int x,
-            int y
+            Player player,
+            Rect2i baseRect,
+            String orientation,
+            String anchor
     ) {
-        if (config.getWarningBobIntensity() != 0) {
-            int intensity = config.getWarningBobIntensity();
-            y += (int) (this.random.nextInt(intensity) - Math.ceil(intensity / 2F));
-        }
-
-        int warningColor = ARGB.opaque(0xFF5555);
-
-        if (config.getOrientation() == ArmorHudExtraConfig.Orientation.HORIZONTAL) {
-            if (!config.getAnchor().isTop()) {
-                y -= WARNING_SIZE + 2;
-            }
-            graphics.centeredText(this.getFont(), "!", x + (SIZE / 2), y, warningColor);
-        } else {
-            int textWidth = this.getFont().width("!") + 2;
-            if (extrasSide == ArmorHudExtraConfig.Side.LEFT) {
-                x -= textWidth;
-            }
-            int textY = (SIZE - this.getFont().lineHeight) / 2;
-            graphics.text(this.getFont(), "!", x + 1, y + textY, warningColor);
-        }
-    }
-
-    @Inject(
-            method = "extractEffects",
-            at = @At(value = "INVOKE", target = "Ljava/util/List;iterator()Ljava/util/Iterator;")
-    )
-    public void calculateStatusEffectIconsOffset(
-            GuiGraphicsExtractor graphics,
-            DeltaTracker deltaTracker,
-            CallbackInfo ci,
-            @Share("shift") LocalIntRef shiftRef
-    ) {
-        ArmorHudExtraConfig config = getManager().getConfig();
-        if (!config.isEnabled()
-                || !config.isPushStatusEffectIcons()
-                || config.getAnchor() != ArmorHudExtraConfig.Anchor.TOP
-                || config.getSide() != ArmorHudExtraConfig.Side.RIGHT) {
+        ItemStack lowest = ArmorHudExtraMod.getLowestArmorPiece(player);
+        if (lowest.isEmpty() || !lowest.isDamageableItem()) {
             return;
         }
 
-        Player player = getCameraPlayer();
-        if (player == null) return;
+        int remaining = lowest.getMaxDamage() - lowest.getDamageValue();
+        int percentage = (int) Math.floor((remaining / (double) lowest.getMaxDamage()) * 100.0);
+        String text = "A " + percentage + "%";
+        int color = ARGB.opaque(lowest.getBarColor());
 
-        Optional<Rect2i> rect = getEffectiveWidgetRect(graphics, player);
-        if (rect.isPresent()) {
-            shiftRef.set(rect.get().getY() + rect.get().getHeight());
+        if ("VERTICAL".equals(orientation)) {
+            int y = baseRect.getY() - this.getFont().lineHeight - 2;
+            graphics.centeredText(this.getFont(), text, baseRect.getX() + (SIZE / 2), y, color);
+            return;
         }
-    }
 
-    @ModifyVariable(method = "extractEffects", at = @At(value = "STORE"), name = "y")
-    public int statusEffectIconsOffset(int y, @Share("shift") LocalIntRef shiftRef) {
-        return y + shiftRef.get();
+        boolean topAnchor = "TOP".equals(anchor) || "TOP_CENTER".equals(anchor);
+        int y = topAnchor
+                ? baseRect.getY() + baseRect.getHeight() + this.getFont().lineHeight + 3
+                : baseRect.getY() - (this.getFont().lineHeight * 2) - 3;
+
+        graphics.centeredText(
+                this.getFont(),
+                text,
+                baseRect.getX() + (baseRect.getWidth() / 2),
+                y,
+                color
+        );
     }
 }
