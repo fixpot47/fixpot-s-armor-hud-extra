@@ -18,7 +18,7 @@ public class MixinMinecraft {
 
         if (ArmorHudExtraMod.getManager().getConfig().isPlayBreakSound()
                 && ArmorHudExtraMod.shouldPlayBreakSound(player)) {
-            player.makeSound(SoundEvents.ITEM_BREAK);
+            player.makeSound(SoundEvents.ITEM_BREAK.value());
         }
     }
 }
