@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "fixpots-armor-hud-extra",
+  "version": "${version}",
+  "name": "fixpot's Armor HUD Extra",
+  "description": "An expanded vanilla-like armor HUD with held-item tracking, exact durability values and low-durability warnings.",
+  "authors": ["fixpot47"],
+  "contributors": ["BerdinskiyBear (original author)", "uku (upstream fork)", "AnAwesomGuy"],
+  "contact": {
+    "homepage": "https://github.com/fixpot47/fixpot-s-armor-hud-extra",
+    "sources": "https://github.com/fixpot47/fixpot-s-armor-hud-extra",
+    "issues": "https://github.com/fixpot47/fixpot-s-armor-hud-extra/issues"
+  },
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["dev.fixpot47.armorhudextra.fabric.ArmorHudExtraFabric"],
+    "ukulib": ["dev.fixpot47.armorhudextra.config.UkulibIntegration"]
+  },
+  "mixins": ["fixpots-armor-hud-extra.mixins.json"],
+  "depends": {
+    "minecraft": "~26.3",
+    "fabricloader": ">=0.19",
+    "fabric-api": "*",
+    "fixlib": ">=2.2.0"
+  },
+  "breaks": {
+    "fixpots-armor-hud": "*"
+  }
+}
