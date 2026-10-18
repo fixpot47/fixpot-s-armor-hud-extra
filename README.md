@@ -16,6 +16,8 @@ Armor HUD Extra keeps the compact vanilla-like armor display and adds extra equi
 
 ## Requirements
 
+GitHub Actions automatically compiles every update so the release JAR is reproducible.
+
 - Minecraft **26.3**
 - Fabric Loader **0.19+**
 - Fabric API
