@@ -3,9 +3,9 @@
   "id": "fixpots-armor-hud-extra",
   "version": "${version}",
   "name": "fixpot's Armor HUD Extra",
-  "description": "An expanded vanilla-like armor HUD with held-item tracking, exact durability values and low-durability warnings.",
+  "description": "An add-on for fixpot's Armor HUD that adds held-item slots, extra durability info and held-item warnings.",
   "authors": ["fixpot47"],
-  "contributors": ["BerdinskiyBear (original author)", "uku (upstream fork)", "AnAwesomGuy"],
+  "contributors": ["BerdinskiyBear (original Armor HUD author)", "uku (upstream Armor HUD fork)", "AnAwesomGuy"],
   "contact": {
     "homepage": "https://github.com/fixpot47/fixpot-s-armor-hud-extra",
     "sources": "https://github.com/fixpot47/fixpot-s-armor-hud-extra",
@@ -22,9 +22,7 @@
     "minecraft": "~26.3",
     "fabricloader": ">=0.19",
     "fabric-api": "*",
-    "fixlib": ">=2.2.0"
-  },
-  "breaks": {
-    "fixpots-armor-hud": "*"
+    "fixlib": ">=2.2.0",
+    "fixpots-armor-hud": ">=1.1.0"
   }
 }
