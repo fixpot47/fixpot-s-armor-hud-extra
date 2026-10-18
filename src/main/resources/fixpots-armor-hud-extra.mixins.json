@@ -4,11 +4,8 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [],
   "client": [
-    "InventoryMenuAccessor",
-    "MixinBossHealthOverlay",
     "MixinHud",
-    "MixinMinecraft",
-    "MixinSubtitleOverlay"
+    "MixinMinecraft"
   ],
   "server": [],
   "injectors": {
