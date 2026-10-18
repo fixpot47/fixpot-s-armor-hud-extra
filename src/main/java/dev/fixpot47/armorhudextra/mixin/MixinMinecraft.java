@@ -12,12 +12,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(Minecraft.class)
 public class MixinMinecraft {
     @Inject(method = "tick", at = @At("RETURN"))
-    public void playLowDurabilityWarning(CallbackInfo ci) {
-        Player player = ArmorHudExtraMod.getCameraPlayer();
-        if (player == null) return;
+    public void playHeldItemWarning(CallbackInfo ci) {
+        if (!ArmorHudExtraMod.getManager().getConfig().isEnabled()) {
+            return;
+        }
 
-        if (ArmorHudExtraMod.getManager().getConfig().isPlayBreakSound()
-                && ArmorHudExtraMod.shouldPlayBreakSound(player)) {
+        Player player = ArmorHudExtraMod.getCameraPlayer();
+        if (player != null && ArmorHudExtraMod.shouldPlayWarningSound(player)) {
             player.makeSound(SoundEvents.ITEM_BREAK.value());
         }
     }
